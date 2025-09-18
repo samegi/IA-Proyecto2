@@ -108,10 +108,10 @@ def forma_normal_conjuntiva(axiomas):
     return resultado
 # Pruebas FNC
 axiomas = [
-    "AlaskanMalamute(Numa)",                      
-    "∀x (AlaskanMalamute(x) → Perro(x))",         
-    "∀x (Perro(x) → Animal(x))",                  
-    "∀x (AlaskanMalamute(x) → Peludo(x))"         
+    "∀x ∀y (Igual(x,y) → Igual(y,x))",                    # Simetría
+    "∀x ∀y ∀z ((Igual(x,y) ∧ Igual(y,z)) → Igual(x,z))",  # Transitividad
+    "Igual(a,b)",                                         # a = b
+    "Igual(b,c)"                                          # b = c
 ]
 
 cnf = forma_normal_conjuntiva(axiomas)
@@ -343,7 +343,7 @@ def refutacion(axiomas, sentencia, archivo_salida="clausulas.txt"):
 
 
 # Sentencia a probar
-sentencia = "Peludo(Numa)"
+sentencia = "Igual(a,c)"
 
 # Ejecutar resolución por refutación
 resultado = refutacion(axiomas, sentencia, "clausulas.txt")
