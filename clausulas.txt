@@ -1,0 +1,6 @@
+Cláusulas en Forma Normal Conjuntiva:
+['AlaskanMalamuteNuma']
+['¬ AlaskanMalamutec4', 'Perroc4']
+['¬ Perroc5', 'Animalc5']
+['¬ AlaskanMalamutec6', 'Peludoc6']
+['¬PeludoNuma']
