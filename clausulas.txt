@@ -1,6 +1,30 @@
-Cl�usulas en Forma Normal Conjuntiva:
-['AlaskanMalamuteNuma']
-['� AlaskanMalamutec4', 'Perroc4']
-['� Perroc5', 'Animalc5']
-['� AlaskanMalamutec6', 'Peludoc6']
-['�PeludoNuma']
+Cláusulas en Forma Normal Conjuntiva:
+  ['Perro(Numa)']
+  ['AlaskanMalamute(Numa)']
+  ['¬AlaskanMalamute(y)', 'Peludo(y)']
+  ['¬AlaskanMalamute(y)', 'Perro(y)']
+  ['Gato(Brandi)']
+  ['¬Peludo(y)', '(Perro(y)∨Gato(y))']
+  ['¬Peludo(Numa)']
+
+Paso 1: Resolver ['AlaskanMalamute(Numa)'] y ['¬AlaskanMalamute(y)', 'Peludo(y)']
+  Literales complementarios: AlaskanMalamute(Numa)  ⟂  ¬AlaskanMalamute(y)
+  Sustitución: {'y': 'Numa'}
+  Resolvente: ['Peludo(Numa)']
+
+Paso 2: Resolver ['AlaskanMalamute(Numa)'] y ['¬AlaskanMalamute(y)', 'Peludo(y)']
+  Literales complementarios: AlaskanMalamute(Numa)  ⟂  ¬AlaskanMalamute(y)
+  Sustitución: {'y': 'Numa'}
+  Resolvente: ['Peludo(Numa)']
+
+Paso 2: Resolver ['AlaskanMalamute(Numa)'] y ['¬AlaskanMalamute(y)', 'Perro(y)']
+  Literales complementarios: AlaskanMalamute(Numa)  ⟂  ¬AlaskanMalamute(y)
+  Sustitución: {'y': 'Numa'}
+  Resolvente: ['Perro(Numa)']
+
+Paso 2: Resolver ['¬Peludo(Numa)'] y ['Peludo(Numa)']
+  Literales complementarios: ¬Peludo(Numa)  ⟂  Peludo(Numa)
+  Sustitución: {}
+  Resolvente: []
+
+>>> Se encontró la cláusula nula. La sentencia está probada por refutación.

@@ -1,3 +1,81 @@
+# --- helpers para 3er punto ---
+import re
+def _strip_outer_parens(s):
+    s = s.strip()
+    if s.startswith("(") and s.endswith(")"):
+        depth = 0
+        for i,ch in enumerate(s):
+            if ch == "(": depth += 1
+            elif ch == ")": depth -= 1
+            if depth == 0 and i < len(s)-1:
+                return s  # había algo fuera de los () externos
+        return s[1:-1].strip()
+    return s
+
+def _split_outside(s, sep):
+    parts, depth, i0 = [], 0, 0
+    i = 0
+    while i < len(s):
+        ch = s[i]
+        if ch == "(": depth += 1
+        elif ch == ")": depth -= 1
+        elif depth == 0 and s.startswith(sep, i):
+            parts.append(s[i0:i].strip()); i0 = i + len(sep)
+        i += 1
+    parts.append(s[i0:].strip())
+    return parts
+
+def _norm_lit(l):
+    l = l.strip()
+    l = l.replace(" ", "")       # borra todos los espacios
+    l = re.sub(r"^¬+", "¬", l)   # normaliza negaciones múltiples
+    return l
+
+def _parse_lit(l):
+    l = _norm_lit(l)
+    neg = l.startswith("¬")
+    if neg: l = l[1:].strip()
+    m = re.match(r"([A-Za-z_][A-Za-z_0-9]*)\(([^()]*)\)$", l)
+    if not m:  # literal mal formado
+        return neg, l, []
+    pred = m.group(1)
+    args = [a.strip() for a in m.group(2).split(",")] if m.group(2) else []
+    return neg, pred, args
+
+def _is_var(t):  # convención: variables inician en minúscula
+    return t and t[0].islower()
+
+def _unify_terms(a, b, theta=None):
+    if theta is None: theta = {}
+    a = theta.get(a, a); b = theta.get(b, b)
+    if a == b: return theta
+    if _is_var(a): theta[a] = b; return theta
+    if _is_var(b): theta[b] = a; return theta
+    return None
+
+def _unify_lits(li, lj):
+    n1,p1,a1 = _parse_lit(li); n2,p2,a2 = _parse_lit(lj)
+    if p1 != p2 or n1 == n2 or len(a1) != len(a2): return None
+    theta = {}
+    for x,y in zip(a1,a2):
+        theta = _unify_terms(x, y, theta)
+        if theta is None: return None
+    return theta
+
+def _apply_sigma(lit, sigma):
+    lit = _norm_lit(lit)
+    neg = lit.startswith("¬")
+    if neg: lit = lit[1:].strip()
+    m = re.match(r"([A-Za-z_][A-Za-z_0-9]*)\(([^()]*)\)$", lit)
+    if m:
+        pred = m.group(1)
+        args = [a.strip() for a in m.group(2).split(",") if a.strip()!='']
+        args = [sigma.get(a, a) for a in args]
+        lit = f"{pred}({','.join(args)})"
+    return ("¬" if neg else "") + lit
+# --- fin helpers ---
+
+
 # Punto 1. Crear funcion
 
 # Paso 1: Eliminar bicondicionales (⇔)
@@ -10,8 +88,15 @@ def eliminar_bicondicional(expr):
 # Paso 2: Eliminar implicaciones (→)
 def eliminar_entonces(expr):
     if "→" in expr:
-        left, right = expr.split("→")
-        return f"(¬{left.strip()} ∨ {right.strip()})"
+        left, right = expr.split("→", 1)
+        # limpiar cuantificador universal
+        left = left.replace("∀x", "").strip()
+        if left.startswith("(") and left.endswith(")"):
+            left = left[1:-1].strip()
+        left = left.replace(" ", "")
+        right = right.strip()
+        # OJO: si right tiene paréntesis, no lo tratamos como un solo argumento, se pasa tal cual
+        return f"(¬{left}) ∨ ({right})"
     return expr
 
 # Paso 3: Aplicar De Morgan y mover negaciones hacia adentro
@@ -84,11 +169,19 @@ def distribuir_or(expr):
 
 # Paso 9: Separar en cláusulas
 def separar_clausulas(expr):
+    expr = _strip_outer_parens(expr)
+    conj = _split_outside(expr, "∧")
     clausulas = []
-    partes = expr.split("∧")
-    for p in partes:
-        p = p.replace("(", "").replace(")", "")
-        literales = [lit.strip() for lit in p.split("∨")]
+    for c in conj:
+        disy = _split_outside(c, "∨")
+        literales = []
+        for d in disy:
+            d = d.strip()
+            if d.startswith("(") and d.endswith(")"):
+                d = d[1:-1]
+            if d.startswith("¬(") and d.endswith(")"):
+                d = "¬" + d[2:-1]
+            literales.append(_norm_lit(d))
         clausulas.append(literales)
     return clausulas
 
@@ -108,10 +201,12 @@ def forma_normal_conjuntiva(axiomas):
     return resultado
 # Pruebas FNC
 axiomas = [
-    "∀x ∀y (Igual(x,y) → Igual(y,x))",                    # Simetría
-    "∀x ∀y ∀z ((Igual(x,y) ∧ Igual(y,z)) → Igual(x,z))",  # Transitividad
-    "Igual(a,b)",                                         # a = b
-    "Igual(b,c)"                                          # b = c
+    "Perro(Numa)",
+    "AlaskanMalamute(Numa)",
+    "∀x (AlaskanMalamute(x) → Peludo(x))",
+    "∀x(AlaskanMalamute(x)→Perro(x))",
+    "Gato(Brandi)",
+    "∀x (Peludo(x) → (Perro(x) ∨ Gato(x)))"
 ]
 
 cnf = forma_normal_conjuntiva(axiomas)
@@ -299,51 +394,81 @@ def neg(literal: str) -> str:
     else:
         return "¬" + literal
 
+from itertools import combinations
+
 def refutacion(axiomas, sentencia, archivo_salida="clausulas.txt"):
     # Negar la sentencia y agregarla
-    axiomas = list(axiomas)  # copia para no modificar original
-    agregar_axioma(axiomas, neg(sentencia))
+    axiomas = list(axiomas)
+    axiomas.append("¬" + sentencia)
 
-    # Convertir a forma normal conjuntiva
+    # A FNC
     fnc = forma_normal_conjuntiva(axiomas)
 
-    # Guardar en archivo de texto
-    with open(archivo_salida, "w") as f:
+    # Normaliza
+    fnc = [[_norm_lit(l) for l in c] for c in fnc]
+
+    with open(archivo_salida, "w", encoding="utf-8") as f:
+        # Guardar cláusulas iniciales
         f.write("Cláusulas en Forma Normal Conjuntiva:\n")
-        for clausula in fnc:
-            f.write(str(clausula) + "\n")
+        print("\nCláusulas iniciales:")
+        for c in fnc:
+            print("  ", c)
+            f.write("  " + str(c) + "\n")
 
-    # Construir las cláusulas iniciales (fnc ya devuelve listas de literales)
-    clausulas = [Clausula(a) for a in fnc]
-    distributiva(clausulas)
+        # Construir lista de cláusulas
+        clausulas = [c[:] for c in fnc]
 
-    print("\n--- INICIO RESOLUCIÓN POR REFUTACIÓN ---")
-    paso = 1
+        paso = 1
+        nuevos = True
+        while nuevos:
+            nuevos = False
+            for i, j in combinations(range(len(clausulas)), 2):
+                Ci, Cj = clausulas[i], clausulas[j]
+                for li in Ci:
+                    for lj in Cj:
+                        theta = _unify_lits(li, lj)
+                        if theta is None:
+                            continue
 
-    while hay_clausulas_por_resolver(clausulas):
-        clausula1, clausula2 = encontrar_clausulas_por_resolver(clausulas)
-        print(f"\nPaso {paso}: Resolver {clausula1.clausulas} y {clausula2.clausulas}")
-        resultados = resolver(clausula1, clausula2)
+                        resolvente = [ _apply_sigma(x, theta) for x in Ci if x != li ] + \
+                                     [ _apply_sigma(x, theta) for x in Cj if x != lj ]
 
-        for resultado in resultados:
-            print(f"  Resolvente obtenido: {resultado.clausulas}")
-            if len(resultado.clausulas) > 0 and not any(c.clausulas == resultado.clausulas for c in clausulas):
-                agregar_clausula(clausulas, resultado)
-                clausulas = sorted(clausulas, key=lambda c: len(c.clausulas))
-                print(f"  -> Nueva cláusula agregada: {resultado.clausulas}")
+                        # quitar duplicados
+                        res_clean = []
+                        for r in resolvente:
+                            if r not in res_clean:
+                                res_clean.append(r)
 
-        if es_clausula_nula(clausulas):
-            print("\n>>> Se encontró la cláusula nula. La sentencia está probada por refutación.")
-            return True
+                        # Mostrar y guardar el paso
+                        paso_info = (
+                            f"\nPaso {paso}: Resolver {Ci} y {Cj}\n"
+                            f"  Literales complementarios: {li}  ⟂  {lj}\n"
+                            f"  Sustitución: {theta}\n"
+                            f"  Resolvente: {res_clean}\n"
+                        )
+                        print(paso_info)
+                        f.write(paso_info)
 
-        paso += 1
+                        if len(res_clean) == 0:
+                            msg = "\n>>> Se encontró la cláusula nula. La sentencia está probada por refutación.\n"
+                            print(msg)
+                            f.write(msg)
+                            return True
+                        if res_clean not in clausulas:
+                            clausulas.append(res_clean)
+                            clausulas = sorted(clausulas, key=len)
+                            nuevos = True
+                            paso += 1
 
-    print("\n>>> No fue posible llegar a contradicción. La sentencia no se puede probar.")
-    return False
+        msg = "\n>>> No fue posible llegar a contradicción. La sentencia no se puede probar.\n"
+        print(msg)
+        f.write(msg)
+        return False
 
+# Pruebas Refutacion
 
 # Sentencia a probar
-sentencia = "Igual(a,c)"
+sentencia = "Peludo(Numa)"
 
 # Ejecutar resolución por refutación
 resultado = refutacion(axiomas, sentencia, "clausulas.txt")
