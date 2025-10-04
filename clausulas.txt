@@ -1,6 +1,15 @@
-Cl�usulas en Forma Normal Conjuntiva:
-['AlaskanMalamuteNuma']
-['� AlaskanMalamutec4', 'Perroc4']
-['� Perroc5', 'Animalc5']
-['� AlaskanMalamutec6', 'Peludoc6']
-['�PeludoNuma']
+===== CLÁUSULAS INICIALES (FNC) =====
+C1: ['¬Igual(x,y ∨ Igual(y,x))']
+C2: ['¬∀z ((Igual(x,y) ∧ Igual(y,z)) ∨ Igual(x,z))']
+C3: ['Igual(a,b)']
+C4: ['Igual(b,c)']
+C5: ['¬Igual(a, c)']
+
+===== PASOS DE RESOLUCIÓN =====
+
+Paso 1: Resolver ['Igual(a,b)'] y ['¬Igual(a, c)']
+  Literales complementarios: Igual(a,b) ⟂ ¬Igual(a, c)
+  Sustitución: {'b': 'c'}
+  Resultado: []
+
+>>> Se obtuvo la cláusula vacía. REFUTACIÓN COMPLETA
