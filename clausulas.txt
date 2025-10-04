@@ -1,30 +1,15 @@
-Cláusulas en Forma Normal Conjuntiva:
-  ['Perro(Numa)']
-  ['AlaskanMalamute(Numa)']
-  ['¬AlaskanMalamute(y)', 'Peludo(y)']
-  ['¬AlaskanMalamute(y)', 'Perro(y)']
-  ['Gato(Brandi)']
-  ['¬Peludo(y)', '(Perro(y)∨Gato(y))']
-  ['¬Peludo(Numa)']
+===== CLÁUSULAS INICIALES (FNC) =====
+C1: ['¬Igual(x,y ∨ Igual(y,x))']
+C2: ['¬∀z ((Igual(x,y) ∧ Igual(y,z)) ∨ Igual(x,z))']
+C3: ['Igual(a,b)']
+C4: ['Igual(b,c)']
+C5: ['¬Igual(a, c)']
 
-Paso 1: Resolver ['AlaskanMalamute(Numa)'] y ['¬AlaskanMalamute(y)', 'Peludo(y)']
-  Literales complementarios: AlaskanMalamute(Numa)  ⟂  ¬AlaskanMalamute(y)
-  Sustitución: {'y': 'Numa'}
-  Resolvente: ['Peludo(Numa)']
+===== PASOS DE RESOLUCIÓN =====
 
-Paso 2: Resolver ['AlaskanMalamute(Numa)'] y ['¬AlaskanMalamute(y)', 'Peludo(y)']
-  Literales complementarios: AlaskanMalamute(Numa)  ⟂  ¬AlaskanMalamute(y)
-  Sustitución: {'y': 'Numa'}
-  Resolvente: ['Peludo(Numa)']
+Paso 1: Resolver ['Igual(a,b)'] y ['¬Igual(a, c)']
+  Literales complementarios: Igual(a,b) ⟂ ¬Igual(a, c)
+  Sustitución: {'b': 'c'}
+  Resultado: []
 
-Paso 2: Resolver ['AlaskanMalamute(Numa)'] y ['¬AlaskanMalamute(y)', 'Perro(y)']
-  Literales complementarios: AlaskanMalamute(Numa)  ⟂  ¬AlaskanMalamute(y)
-  Sustitución: {'y': 'Numa'}
-  Resolvente: ['Perro(Numa)']
-
-Paso 2: Resolver ['¬Peludo(Numa)'] y ['Peludo(Numa)']
-  Literales complementarios: ¬Peludo(Numa)  ⟂  Peludo(Numa)
-  Sustitución: {}
-  Resolvente: []
-
->>> Se encontró la cláusula nula. La sentencia está probada por refutación.
+>>> Se obtuvo la cláusula vacía. REFUTACIÓN COMPLETA
